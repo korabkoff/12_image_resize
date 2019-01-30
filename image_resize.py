@@ -25,27 +25,23 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def resize_image(path_to_original, path_to_result, width, height, scale):
-
+def open_image(path_to_original):
     if not path_to_original:
         return None
 
-    elif scale and (height or width):
-        print('Scale can\'t be used with height or width')
-        return None
+    return Image.open(path_to_original)
 
-    im = Image.open(path_to_original)
+
+def resize_image(im, width, height, scale):
 
     img_width, img_height = im.size
 
-    basename = os.path.basename(path_to_original)
-    path_to_img = '{}'.format(os.path.dirname(path_to_original))
-    img_name = (basename.split('.'))[0]
-    img_ext = (basename.split('.'))[1]
+    if scale and (height or width):
+        print('Scale can\'t be used with height or width')
+        return None
 
-    if scale and not width and not height:
-
-        im = im.resize(
+    elif scale and not width and not height:
+        return im.resize(
             (round(img_width * (Fraction(scale))),
              round(img_height * (Fraction(scale)))),
             resample=0
@@ -53,17 +49,25 @@ def resize_image(path_to_original, path_to_result, width, height, scale):
 
     elif not height and not scale:
         scale = width / img_width
-        im = im.resize((width, round(img_height * (Fraction(scale)))), resample=0)
+        return im.resize((width, round(img_height * (Fraction(scale)))), resample=0)
 
     elif not width and not scale:
         scale = height / img_height
-        im = im.resize(((round(img_width * (Fraction(scale)))), height), resample=0)
+        return im.resize(((round(img_width * (Fraction(scale)))), height), resample=0)
+
     else:
-        im = im.resize((width, height), resample=0)
-        if img_width/img_height != width/height:
+        if img_width / img_height != width / height:
             print('Image proportions not identical')
+        return im.resize((width, height), resample=0)
+
+
+def save_image(im, path_to_original, path_to_result):
 
     img_width, img_height = im.size
+    basename = os.path.basename(path_to_original)
+    path_to_img = '{}'.format(os.path.dirname(path_to_original))
+    img_name = (basename.split('.'))[0]
+    img_ext = (basename.split('.'))[1]
 
     if not path_to_result:
         path_to_result = '{}{}__{}x{}.{}'.format(
@@ -81,7 +85,6 @@ def resize_image(path_to_original, path_to_result, width, height, scale):
             img_height,
             img_ext
         )
-
     im.save(path_to_result, format=None)
 
 
@@ -99,6 +102,9 @@ if __name__ == '__main__':
 
     scale = parser.scale
 
-    resize_image(path_to_original, path_to_result, width, height, scale)
+    the_image = open_image(path_to_original)
 
-    
+    the_image = resize_image(the_image, width, height, scale)
+
+    save_image(the_image, path_to_original, path_to_result)
+
